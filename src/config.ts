@@ -17,7 +17,7 @@ import { getTranslateLanguageFromConfig, detectBrowserLanguage } from "./utils/l
  */
 
 // 自动检测浏览器语言
-const SITE_LANG = detectBrowserLanguage("en"); // 服务端渲染时默认为 'en'
+const SITE_LANG = detectBrowserLanguage("zh"); // 服务端渲染时默认为 'en'
 // 如果需要强制使用特定语言，可以取消注释下面一行并设置语言代码
 //const SITE_LANG = "zh"; // 强制使用的语言代码，'zh', 'en', 'ja' 等
 
@@ -44,7 +44,7 @@ export const siteConfig: SiteConfig = {
         // 默认翻译语言
         defaultLanguage: getTranslateLanguageFromConfig(SITE_LANG), // 根据检测到的语言自动设置默认翻译语言
         // 显示语言选择下拉框
-        showSelectTag: false, // 使用自定义按钮
+        showSelectTag: true, // 使用自定义按钮
         // 自动检测用户语言
         autoDiscriminate: true,
         // 翻译时忽略的 CSS 类名
