@@ -30,7 +30,7 @@ export const siteConfig: SiteConfig = {
     // 站点 URL（以斜杠结尾）
     siteURL: "https://twilight.spr-aachen.com/", // 请替换为你的站点 URL 并以斜杠结尾
     // 站点标题
-    title: "Twilight",
+    title: "Aniv Blog",
     // 站点副标题
     subtitle: "Blog Template",
     // 语言配置
@@ -92,7 +92,7 @@ export const siteConfig: SiteConfig = {
             ],
         },
         // 壁纸位置 ('top' | 'center' | 'bottom')
-        position: "center",
+        position: "boottom",
         // 轮播配置 (fullscreen 和 banner 模式共享)
         carousel: {
             // 为多张图片启用轮播，否则随机显示一张图片
@@ -114,7 +114,7 @@ export const siteConfig: SiteConfig = {
                 // 在主页显示文本
                 enable: true,
                 // 主标题
-                title: "Twilight",
+                title: "Aniv Blog",
                 // 副标题，支持单个字符串或字符串数组
                 subtitle: [
                     "Illuminate Our Paths",
