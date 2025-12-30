@@ -1,5 +1,5 @@
 ---
-draft: true
+draft: false
 encrypted: true
 published: 2020-02-02
 routeName: encrypted-example
