@@ -22,6 +22,9 @@ collections:
     folder: "src/content/posts"
     create: true
     slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    identifier_field: "title"
     description: "管理博客文章"
     fields:
       - {label: "标题", name: "title", widget: "string"}
