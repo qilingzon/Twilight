@@ -430,7 +430,7 @@ export const postConfig: PostConfig = {
 // 页脚配置
 export const footerConfig: FooterConfig = {
     // 启用 Footer HTML 注入功能
-    enable: false,
+    enable: true,
     // 自定义 HTML 内容，用于添加备案号等信息
     customHtml: "",
 };
