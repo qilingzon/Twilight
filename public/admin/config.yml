@@ -27,6 +27,7 @@ collections:
       - {label: "Tags", name: "tags", widget: "list", default: [], required: false}
       - {label: "Category", name: "category", widget: "string", required: false}
       - {label: "Draft", name: "draft", widget: "boolean", default: false}
+      - {label: "Pinned", name: "pinned", widget: "boolean", default: false, hint: "置顶文章会显示在列表最前面"}
       - {label: "Body", name: "body", widget: "markdown"}
   # 项目集合
   - name: "projects"
