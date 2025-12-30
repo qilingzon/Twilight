@@ -1,10 +1,10 @@
 backend:
   name: github
-  repo: qilingzon/Twilight # 请替换为您的 GitHub 仓库
-  branch: main # 请替换为您的分支名称
-  site_domain: blog.aniv.cn # 请替换为您的域名
-  base_url: https://blog.aniv.cn  # 请替换为您的 URL
-  auth_endpoint: oauth # OAuth 路由由集成提供
+  repo: qilingzon/Twilight
+  branch: main
+  site_domain: blog1.aniv.cn
+  base_url: https://blog1.aniv.cn
+  auth_endpoint: oauth
 
 # 语言设置
 locale: "zh_Hans"
@@ -67,6 +67,7 @@ collections:
     create: true
     slug: "{{slug}}"
     format: "json"
+    identifier_field: "name"
     description: "管理技能展示"
     fields:
       - { label: "名称", name: "name", widget: "string" }
@@ -121,6 +122,7 @@ collections:
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{hour}}-{{minute}}"
     format: "json"
+    identifier_field: "date"
     description: "管理日记/说说"
     fields:
       - { label: "内容", name: "content", widget: "text" }
