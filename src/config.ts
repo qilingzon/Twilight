@@ -75,7 +75,7 @@ export const siteConfig: SiteConfig = {
         fixed: false,
     },
     // 默认主题 ("system" 跟随系统 | "light" 浅色 | "dark" 深色)
-    defaultTheme: "dark",
+    defaultTheme: "system",
     // 壁纸配置
     wallpaper: {
         // 模式 ("banner" 横幅 | "fullscreen" 全屏 | "none" 纯色)
