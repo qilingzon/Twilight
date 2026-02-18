@@ -51,7 +51,7 @@ export default defineConfig({
     integrations: [
         decapCmsOauth({
             decapCMSVersion: "3.9.0",
-            oauthDisabled: Disable, // Disable it to use oauth, requires .env configuration
+            oauthDisabled: false, // Disable it to use oauth, requires .env configuration
         }),
         swup({
             theme: false,
