@@ -33,25 +33,37 @@ import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 
 
-// Choose adapter depending on deployment environment
-const adapter = process.env.GITHUB_ACTIONS
-    ? undefined
-    : (process.env.CF_PAGES
-        ? cloudflarePages()
-        : (process.env.EDGEONE
-            ? edgeone()
-            : vercel({ mode: "serverless" })));
+// Choose adapter depending on deployment environment.
+// Default to static output for generic/static hosts.
+const isCloudflarePages = Boolean(process.env.CF_PAGES);
+const isEdgeOne = Boolean(process.env.EDGEONE);
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+
+const adapter = isCloudflarePages
+    ? cloudflarePages()
+    : isEdgeOne
+        ? edgeone()
+        : isVercel
+            ? vercel({ mode: "serverless" })
+            : undefined;
+
+const hasGithubOauthSecrets = Boolean(
+    process.env.OAUTH_GITHUB_CLIENT_ID && process.env.OAUTH_GITHUB_CLIENT_SECRET,
+);
 
 // Ref: https://astro.build/config
 export default defineConfig({
     site: siteConfig.siteURL,
     base: "/",
     trailingSlash: "always",
+    output: adapter ? "server" : "static",
     adapter: adapter,
     integrations: [
         decapCmsOauth({
             decapCMSVersion: "3.9.0",
-            oauthDisabled: false, // Disable it to use oauth, requires .env configuration
+            // EdgeOne Pages / generic static builds don't have SSR OAuth routes.
+            // Only enable integration-provided OAuth when an SSR adapter is enabled AND secrets are present.
+            oauthDisabled: !adapter || !hasGithubOauthSecrets,
         }),
         swup({
             theme: false,
