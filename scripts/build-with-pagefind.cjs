@@ -2,7 +2,6 @@
 
 const { execSync } = require('child_process');
 const { existsSync } = require('fs');
-const { join } = require('path');
 
 // Detect the platform
 function detectPlatform() {
@@ -20,11 +19,6 @@ function detectPlatform() {
         return 'edgeone';
     }
     if (process.env.VERCEL) {
-        return 'vercel';
-    }
-
-    // Check if specific directories exist
-    if (existsSync('.vercel')) {
         return 'vercel';
     }
 
@@ -46,21 +40,41 @@ function getPagefindOutputDir(platform) {
     return outputDirs[platform] || 'dist';
 }
 
+function resolveExistingOutputDir(preferredDir) {
+    if (preferredDir && existsSync(preferredDir)) return preferredDir;
+
+    const fallbacks = ['dist', '.vercel/output/static'];
+    for (const dir of fallbacks) {
+        if (existsSync(dir)) return dir;
+    }
+
+    return preferredDir;
+}
+
 // Main function
 function main() {
     const platform = detectPlatform();
-    const outputDir = getPagefindOutputDir(platform);
+    const preferredOutputDir = getPagefindOutputDir(platform);
 
     console.log(`🚀 Detected deployment platform: ${platform}`);
-    console.log(`📁 Pagefind output directory: ${outputDir}`);
+    console.log(`📁 Preferred Pagefind output directory: ${preferredOutputDir}`);
 
     try {
+        // Best-effort: keep Decap CMS bundle same-origin for faster /admin load.
+        execSync(`node scripts/fetch-decap-cms.cjs`.trim(), {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+
         // Run Astro build
         console.log('🔨 Running Astro build...');
         execSync(`npx astro build`.trim(), {
             stdio: 'inherit',
             cwd: process.cwd() // Ensure in the correct directory
         });
+
+        const outputDir = resolveExistingOutputDir(preferredOutputDir);
+        console.log(`📁 Pagefind output directory (resolved): ${outputDir}`);
 
         // Check if output directory exists
         if (!existsSync(outputDir)) {

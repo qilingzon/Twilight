@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import { existsSync } from "node:fs";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
@@ -61,6 +62,11 @@ export default defineConfig({
     integrations: [
         decapCmsOauth({
             decapCMSVersion: "3.9.0",
+            // Prefer same-origin Decap CMS bundle for faster loading / fewer tracking-prevention issues.
+            // `scripts/fetch-decap-cms.cjs` will download it into `public/admin/decap-cms.js` during build.
+            decapCMSSrcUrl: existsSync(new URL("./public/admin/decap-cms.js", import.meta.url))
+                ? "/admin/decap-cms.js"
+                : "https://unpkg.com/decap-cms@^3.9.0/dist/decap-cms.js",
             // EdgeOne Pages / generic static builds don't have SSR OAuth routes.
             // Only enable integration-provided OAuth when an SSR adapter is enabled AND secrets are present.
             oauthDisabled: !adapter || !hasGithubOauthSecrets,
