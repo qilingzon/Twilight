@@ -4,21 +4,50 @@ function getEnv(env, key) {
   return undefined;
 }
 
-function buildAuthorizeUrl(clientId) {
-  const params = new URLSearchParams({
-    client_id: clientId,
-    scope: "repo,user",
-  });
-  return `https://github.com/login/oauth/authorize?${params.toString()}`;
+function isValidGithubClientId(clientId) {
+  return typeof clientId === "string" && /^[A-Za-z0-9]+$/.test(clientId);
+}
+
+function sanitizeForDisplay(value) {
+  if (typeof value !== "string") return "";
+  return value.replace(/[^A-Za-z0-9]/g, "•");
+}
+
+function buildAuthorizeUrl({ clientId, scope, redirectUri }) {
+  const url = new URL("https://github.com/login/oauth/authorize");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("scope", scope);
+  if (redirectUri) url.searchParams.set("redirect_uri", redirectUri);
+  return url.toString();
 }
 
 async function handle(request, env) {
+  const requestUrl = new URL(request.url);
   const clientId = getEnv(env, "OAUTH_GITHUB_CLIENT_ID");
   if (!clientId) {
     return new Response("Missing OAUTH_GITHUB_CLIENT_ID", { status: 500 });
   }
 
-  const url = buildAuthorizeUrl(clientId);
+  if (!isValidGithubClientId(clientId)) {
+    const message = [
+      "Invalid OAUTH_GITHUB_CLIENT_ID.",
+      "It should contain only letters and digits (no spaces, quotes, or punctuation).",
+      `Current value (sanitized): ${sanitizeForDisplay(clientId)}`,
+    ].join("\n");
+
+    return new Response(message, {
+      status: 500,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const scope = requestUrl.searchParams.get("scope") || "repo,user";
+  const redirectUri = new URL("/oauth/callback", requestUrl.origin).toString();
+
+  const url = buildAuthorizeUrl({ clientId, scope, redirectUri });
   return Response.redirect(url, 302);
 }
 

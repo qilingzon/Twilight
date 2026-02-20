@@ -4,6 +4,10 @@ function getEnv(env, key) {
   return undefined;
 }
 
+function isValidGithubClientId(clientId) {
+  return typeof clientId === "string" && /^[A-Za-z0-9]+$/.test(clientId);
+}
+
 function htmlResponse(html, status = 200) {
   return new Response(html, {
     status,
@@ -52,7 +56,17 @@ async function handle(request, env) {
   const repoId = getEnv(env, "OAUTH_GITHUB_REPO_ID");
 
   if (!clientId || !clientSecret) {
-    return new Response("Missing OAuth env vars", { status: 500 });
+    return new Response("Missing OAuth env vars: OAUTH_GITHUB_CLIENT_ID and/or OAUTH_GITHUB_CLIENT_SECRET", {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
+
+  if (!isValidGithubClientId(clientId)) {
+    return new Response("Invalid OAUTH_GITHUB_CLIENT_ID (must be alphanumeric)", {
+      status: 500,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   if (!code) {
