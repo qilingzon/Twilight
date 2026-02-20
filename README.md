@@ -91,6 +91,19 @@ English | [**中文**](docs/README_ZH.md)
 
 Deploy your blog to any static hosting platform
 
+### EdgeOne Pages + GitHub 登录（Decap CMS）
+
+本项目的 Decap CMS 后台位于 `/admin`，GitHub OAuth 授权接口为 `/oauth`、回调为 `/oauth/callback`。
+
+1. 在 GitHub 创建 OAuth App
+   - Homepage URL：你的站点域名（例如 `https://blog1.aniv.cn`）
+   - Authorization callback URL：`https://你的域名/oauth/callback`
+2. 在 EdgeOne Pages 项目中启用 Functions，并在「环境变量」里配置：
+   - `OAUTH_GITHUB_CLIENT_ID`
+   - `OAUTH_GITHUB_CLIENT_SECRET`
+   - `OAUTH_GITHUB_REPO_ID`（可选，用于限制授权到指定仓库）
+3. 部署后访问 `https://你的域名/admin/`，点击登录即可。
+
 
 ## ⚡ Commands
 
