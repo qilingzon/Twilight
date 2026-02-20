@@ -5,6 +5,8 @@ backend:
     branch: main # 请替换为您的分支名称
     site_domain: tw.aniv.cn # 请替换为您的域名
     base_url: https://tw.aniv.cn  # 请替换为您的 URL
+    # Use same-origin GitHub API proxy so mobile clients don't need direct access to api.github.com.
+    api_root: https://tw.aniv.cn/github-api
     auth_endpoint: oauth # OAuth 路由由集成提供
 
 
