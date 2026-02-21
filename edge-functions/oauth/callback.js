@@ -86,6 +86,7 @@ async function handle(request, env) {
       provider: "github",
     };
 
+    const allowedOrigin = url.origin;
     const html = `<!doctype html>
 <html>
   <head>
@@ -95,11 +96,13 @@ async function handle(request, env) {
   </head>
   <body>
     <script>
+      const allowedOrigin = ${JSON.stringify(allowedOrigin)};
       const receiveMessage = (message) => {
+        if (!message || message.origin !== allowedOrigin) return;
         try {
           window.opener.postMessage(
             'authorization:${content.provider}:success:${JSON.stringify(content)}',
-            message.origin
+            allowedOrigin
           );
         } finally {
           window.removeEventListener('message', receiveMessage, false);
@@ -108,7 +111,9 @@ async function handle(request, env) {
       };
 
       window.addEventListener('message', receiveMessage, false);
-      window.opener.postMessage('authorizing:${content.provider}', '*');
+      if (window.opener) {
+        window.opener.postMessage('authorizing:${content.provider}', allowedOrigin);
+      }
     </script>
   </body>
 </html>`;
