@@ -6,9 +6,7 @@ import svelte, { vitePreprocess } from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import swup from "@swup/astro";
 import sitemap from "@astrojs/sitemap";
-import cloudflarePages from "@astrojs/cloudflare";
 import edgeone from "@edgeone/astro";
-import vercel from "@astrojs/vercel";
 import decapCmsOauth from "astro-decap-cms-oauth";
 import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
@@ -40,13 +38,20 @@ const isCloudflarePages = Boolean(process.env.CF_PAGES);
 const isEdgeOne = Boolean(process.env.EDGEONE);
 const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 
-const adapter = isCloudflarePages
-    ? cloudflarePages()
-    : isEdgeOne
-        ? edgeone()
-        : isVercel
-            ? vercel({ mode: "serverless" })
-            : undefined;
+async function resolveAdapter() {
+    if (isEdgeOne) return edgeone();
+    if (isCloudflarePages) {
+        const mod = await import("@astrojs/cloudflare");
+        return mod.default();
+    }
+    if (isVercel) {
+        const mod = await import("@astrojs/vercel");
+        return mod.default({ mode: "serverless" });
+    }
+    return undefined;
+}
+
+const adapter = await resolveAdapter();
 
 const hasGithubOauthSecrets = Boolean(
     process.env.OAUTH_GITHUB_CLIENT_ID && process.env.OAUTH_GITHUB_CLIENT_SECRET,
