@@ -13,11 +13,24 @@ function sanitizeForDisplay(value) {
   return value.replace(/[^A-Za-z0-9]/g, "•");
 }
 
-function buildAuthorizeUrl({ clientId, scope, redirectUri }) {
+function base64UrlEncodeBytes(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function generateNonce() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncodeBytes(bytes);
+}
+
+function buildAuthorizeUrl({ clientId, scope, redirectUri, state }) {
   const url = new URL("https://github.com/login/oauth/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("scope", scope);
   if (redirectUri) url.searchParams.set("redirect_uri", redirectUri);
+  if (state) url.searchParams.set("state", state);
   return url.toString();
 }
 
@@ -47,8 +60,25 @@ async function handle(request, env) {
   const scope = requestUrl.searchParams.get("scope") || "repo,user";
   const redirectUri = new URL("/oauth/callback", requestUrl.origin).toString();
 
-  const url = buildAuthorizeUrl({ clientId, scope, redirectUri });
-  return Response.redirect(url, 302);
+  const nonce = generateNonce();
+  const cookie = [
+    `__Host-decap-oauth-nonce=${nonce}`,
+    "Path=/",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Lax",
+    "Max-Age=600",
+  ].join("; ");
+
+  const url = buildAuthorizeUrl({ clientId, scope, redirectUri, state: nonce });
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: url,
+      "Set-Cookie": cookie,
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 export async function onRequest(context) {

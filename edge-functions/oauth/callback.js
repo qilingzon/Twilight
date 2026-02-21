@@ -18,6 +18,30 @@ function htmlResponse(html, status = 200) {
   });
 }
 
+function getCookie(request, name) {
+  const cookie = request.headers.get("Cookie") || "";
+  const parts = cookie.split(/;\s*/g);
+  for (const part of parts) {
+    const idx = part.indexOf("=");
+    if (idx === -1) continue;
+    const k = part.slice(0, idx).trim();
+    if (k !== name) continue;
+    return part.slice(idx + 1);
+  }
+  return "";
+}
+
+function clearNonceCookie() {
+  return [
+    "__Host-decap-oauth-nonce=",
+    "Path=/",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Lax",
+    "Max-Age=0",
+  ].join("; ");
+}
+
 async function exchangeCodeForToken({ code, clientId, clientSecret, repoId }) {
   const payload = {
     code,
@@ -50,6 +74,7 @@ async function exchangeCodeForToken({ code, clientId, clientSecret, repoId }) {
 async function handle(request, env) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
 
   const clientId = getEnv(env, "OAUTH_GITHUB_CLIENT_ID");
   const clientSecret = getEnv(env, "OAUTH_GITHUB_CLIENT_SECRET");
@@ -71,6 +96,17 @@ async function handle(request, env) {
 
   if (!code) {
     return new Response("Missing code", { status: 400 });
+  }
+
+  const expectedNonce = getCookie(request, "__Host-decap-oauth-nonce");
+  if (!state || !expectedNonce || state !== expectedNonce) {
+    return new Response("Invalid state", {
+      status: 400,
+      headers: {
+        "Cache-Control": "no-store",
+        "Set-Cookie": clearNonceCookie(),
+      },
+    });
   }
 
   try {
@@ -118,10 +154,24 @@ async function handle(request, env) {
   </body>
 </html>`;
 
-    return htmlResponse(html);
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Set-Cookie": clearNonceCookie(),
+      },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return htmlResponse(`OAuth error: ${msg}`, 500);
+    return new Response(`OAuth error: ${msg}`, {
+      status: 500,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Set-Cookie": clearNonceCookie(),
+      },
+    });
   }
 }
 
