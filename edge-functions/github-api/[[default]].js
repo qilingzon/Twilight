@@ -4,6 +4,17 @@ function getEnv(env, key) {
   return undefined;
 }
 
+function jsonResponse(body, status = 200, extraHeaders) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...(extraHeaders ? Object.fromEntries(new Headers(extraHeaders)) : {}),
+    },
+  });
+}
+
 function base64UrlEncodeBytes(bytes) {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
@@ -82,6 +93,11 @@ async function verifyAuthToken({ token, secret }) {
   return { ok: true, payload };
 }
 
+function looksLikeSignedToken(token) {
+  // Our signed token format is: <base64url(payload)>.<base64url(sig)>
+  return typeof token === "string" && token.includes(".") && token.split(".").length === 2;
+}
+
 function stripHopByHopHeaders(headers) {
   const h = new Headers(headers);
   const hopByHop = [
@@ -116,46 +132,43 @@ function isAllowedPath({ apiPath, repo }) {
 
 async function handle(request, env) {
   const authSecret = getEnv(env, "CMS_AUTH_SECRET");
-  const githubPat = getEnv(env, "GITHUB_PAT");
   const repo = normalizeRepo(getEnv(env, "CMS_GITHUB_REPO") || "qilingzon/Twilight");
-
-  if (!authSecret || !githubPat) {
-    return new Response("Missing env vars: CMS_AUTH_SECRET and/or GITHUB_PAT", {
-      status: 500,
-      headers: { "Cache-Control": "no-store" },
-    });
-  }
-
-  const token = extractAuthToken(request);
-  const verified = await verifyAuthToken({ token, secret: authSecret });
-  if (!verified.ok) {
-    return new Response("Unauthorized", {
-      status: 401,
-      headers: {
-        "Cache-Control": "no-store",
-        "WWW-Authenticate": "Bearer",
-      },
-    });
-  }
 
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/github-api")) {
-    return new Response("Not Found", { status: 404 });
+    return jsonResponse({ error: "Not Found" }, 404);
   }
 
   const apiPath = url.pathname.slice("/github-api".length) || "/";
   if (!isAllowedPath({ apiPath, repo })) {
-    return new Response("Forbidden", {
-      status: 403,
-      headers: { "Cache-Control": "no-store" },
-    });
+    return jsonResponse({ error: "Forbidden" }, 403);
+  }
+
+  // Auth strategy:
+  // - If the request carries our signed token AND CMS_AUTH_SECRET is set, verify it and use GITHUB_PAT server-side.
+  // - Otherwise treat the token as a GitHub OAuth access token and pass it through.
+  const presentedToken = extractAuthToken(request);
+  if (!presentedToken) {
+    return jsonResponse({ error: "Unauthorized" }, 401, { "WWW-Authenticate": "Bearer" });
+  }
+
+  let githubToken = presentedToken;
+  if (authSecret && looksLikeSignedToken(presentedToken)) {
+    const verified = await verifyAuthToken({ token: presentedToken, secret: authSecret });
+    if (verified.ok) {
+      const githubPat = getEnv(env, "GITHUB_PAT");
+      if (!githubPat) {
+        return jsonResponse({ error: "Missing env var: GITHUB_PAT" }, 500);
+      }
+      githubToken = githubPat;
+    }
   }
 
   const upstream = new URL(`https://api.github.com${apiPath}`);
   upstream.search = url.search;
 
   const upstreamHeaders = stripHopByHopHeaders(request.headers);
-  upstreamHeaders.set("Authorization", `token ${githubPat}`);
+  upstreamHeaders.set("Authorization", `token ${githubToken}`);
   upstreamHeaders.set("Accept", upstreamHeaders.get("Accept") || "application/vnd.github+json");
   upstreamHeaders.set("User-Agent", upstreamHeaders.get("User-Agent") || "edgeone-decap-proxy");
   upstreamHeaders.set("X-GitHub-Api-Version", "2022-11-28");
