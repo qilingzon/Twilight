@@ -1,7 +1,8 @@
 /* This is a script to build the site with Pagefind */
 
-const { execSync } = require('child_process');
+const { spawn } = require('child_process');
 const { existsSync } = require('fs');
+const path = require('path');
 
 // Detect the platform
 function detectPlatform() {
@@ -51,38 +52,51 @@ function resolveExistingOutputDir(preferredDir) {
     return preferredDir;
 }
 
+function run(command, args, options = {}) {
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, args, {
+            stdio: 'inherit',
+            cwd: process.cwd(),
+            ...options,
+        });
+
+        child.on('error', reject);
+        child.on('exit', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`${command} exited with code ${code}`));
+        });
+    });
+}
+
 // Main function
-function main() {
+async function main() {
     const platform = detectPlatform();
     const preferredOutputDir = getPagefindOutputDir(platform);
+
+    const nodeBin = process.execPath;
+    const scriptPath = (p) => path.join('scripts', p);
+
+    const runPnpm = (pnpmArgs) => {
+        if (process.platform === 'win32') {
+            return run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'pnpm', ...pnpmArgs]);
+        }
+        return run('pnpm', pnpmArgs);
+    };
 
     console.log(`🚀 Detected deployment platform: ${platform}`);
     console.log(`📁 Preferred Pagefind output directory: ${preferredOutputDir}`);
 
     try {
-        // Best-effort: keep Decap CMS bundle same-origin for faster /admin load.
-        execSync(`node scripts/fetch-decap-cms.cjs`.trim(), {
-            stdio: 'inherit',
-            cwd: process.cwd()
-        });
-
-        // Best-effort: keep other third-party runtime bundles same-origin.
-        execSync(`node scripts/fetch-mermaid.cjs`.trim(), {
-            stdio: 'inherit',
-            cwd: process.cwd()
-        });
-
-        execSync(`node scripts/fetch-iconify-icon.cjs`.trim(), {
-            stdio: 'inherit',
-            cwd: process.cwd()
-        });
+        // Best-effort: keep runtime bundles same-origin.
+        await Promise.all([
+            run(nodeBin, [scriptPath('fetch-decap-cms.cjs')]),
+            run(nodeBin, [scriptPath('fetch-mermaid.cjs')]),
+            run(nodeBin, [scriptPath('fetch-iconify-icon.cjs')]),
+        ]);
 
         // Run Astro build
         console.log('🔨 Running Astro build...');
-        execSync(`pnpm -s exec astro build`.trim(), {
-            stdio: 'inherit',
-            cwd: process.cwd() // Ensure in the correct directory
-        });
+        await runPnpm(['-s', 'exec', 'astro', 'build']);
 
         const outputDir = resolveExistingOutputDir(preferredOutputDir);
         console.log(`📁 Pagefind output directory (resolved): ${outputDir}`);
@@ -93,12 +107,13 @@ function main() {
             process.exit(1);
         }
 
-        // Run Pagefind
-        console.log(`🔍 Running Pagefind search index generation...`);
-        execSync(`pnpm -s exec pagefind --site ${outputDir}`, {
-            stdio: 'inherit',
-            cwd: process.cwd() // Ensure in the correct directory
-        });
+        const skipPagefind = String(process.env.SKIP_PAGEFIND || '').toLowerCase();
+        if (skipPagefind === '1' || skipPagefind === 'true' || skipPagefind === 'yes') {
+            console.log('⏭️  Skipping Pagefind (SKIP_PAGEFIND=1)');
+        } else {
+            console.log(`🔍 Running Pagefind search index generation...`);
+            await runPnpm(['-s', 'exec', 'pagefind', '--site', outputDir]);
+        }
 
         console.log('✅ Build completed!');
         console.log(`📊 Search index generated at: ${outputDir}/pagefind/`);
