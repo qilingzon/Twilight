@@ -10185,13 +10185,9 @@ var translate = {
             try {
                 jsObject = JSON.parse(jsString);
             } catch (e) {
-                try {
-                    jsObject = eval('(' + jsString + ')');
-                } catch (e) {
-                    translate.log(e)
-                    failureFunction(e);
-                    return;
-                }
+                translate.log(e)
+                failureFunction(e);
+                return;
             }
             translate.js.transObject(jsObject, targetLanguage, successFunction, failureFunction);
         },
