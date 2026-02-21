@@ -412,8 +412,8 @@
 
         return new Promise((resolve, reject) => {
             const script = document.createElement("script");
-            script.src =
-                "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+            // Prefer same-origin bundle (generated during build) to avoid CDN slowness / tampering.
+            script.src = "/assets/js/mermaid.min.js";
 
             script.onload = () => {
                 console.log("Mermaid library loaded successfully");
@@ -422,12 +422,13 @@
 
             script.onerror = (error) => {
                 console.error("Failed to load Mermaid library:", error);
-                // 尝试备用 CDN
+                // Fallback to CDN
                 const fallbackScript = document.createElement("script");
-                fallbackScript.src = "https://unpkg.com/mermaid@11/dist/mermaid.min.js";
+                fallbackScript.src =
+                    "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
 
                 fallbackScript.onload = () => {
-                    console.log("Mermaid library loaded from fallback CDN");
+                    console.log("Mermaid library loaded from CDN fallback");
                     resolve();
                 };
 

@@ -66,6 +66,17 @@ function main() {
             cwd: process.cwd()
         });
 
+        // Best-effort: keep other third-party runtime bundles same-origin.
+        execSync(`node scripts/fetch-mermaid.cjs`.trim(), {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+
+        execSync(`node scripts/fetch-iconify-icon.cjs`.trim(), {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+
         // Run Astro build
         console.log('🔨 Running Astro build...');
         execSync(`npx astro build`.trim(), {

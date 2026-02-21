@@ -90,7 +90,8 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
                     }
 
                     const script = document.createElement('script');
-                    script.src = 'https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js';
+                    // Prefer same-origin bundle (generated during build) to avoid CDN issues.
+                    script.src = '/assets/js/iconify-icon.min.js';
                     script.async = true;
                     script.crossOrigin = 'anonymous';
 
@@ -107,7 +108,30 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
                     script.onerror = () => {
                         clearTimeout(timeoutId);
                         script.remove();
-                        reject(new Error('Script load error'));
+
+                        // Fallback to official CDN
+                        const fallback = document.createElement('script');
+                        fallback.src = 'https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js';
+                        fallback.async = true;
+                        fallback.crossOrigin = 'anonymous';
+
+                        const fbTimeoutId = setTimeout(() => {
+                            fallback.remove();
+                            reject(new Error('Fallback script load timeout'));
+                        }, timeout);
+
+                        fallback.onload = () => {
+                            clearTimeout(fbTimeoutId);
+                            this.waitForIconifyReady().then(resolve).catch(reject);
+                        };
+
+                        fallback.onerror = () => {
+                            clearTimeout(fbTimeoutId);
+                            fallback.remove();
+                            reject(new Error('Script load error'));
+                        };
+
+                        document.head.appendChild(fallback);
                     };
 
                     document.head.appendChild(script);
