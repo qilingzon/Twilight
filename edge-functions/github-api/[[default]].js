@@ -114,6 +114,14 @@ function stripHopByHopHeaders(headers) {
   return h;
 }
 
+function stripContentEncodingHeaders(headers) {
+  const h = new Headers(headers);
+  // If the runtime auto-decompresses the body, keeping these headers can break clients.
+  h.delete("content-encoding");
+  h.delete("content-length");
+  return h;
+}
+
 function normalizeRepo(repo) {
   if (!repo) return "";
   const trimmed = String(repo).trim();
@@ -168,6 +176,8 @@ async function handle(request, env) {
   upstream.search = url.search;
 
   const upstreamHeaders = stripHopByHopHeaders(request.headers);
+  // Avoid upstream compression to reduce client-side decoding issues.
+  upstreamHeaders.set("Accept-Encoding", "identity");
   upstreamHeaders.set("Authorization", `token ${githubToken}`);
   upstreamHeaders.set("Accept", upstreamHeaders.get("Accept") || "application/vnd.github+json");
   upstreamHeaders.set("User-Agent", upstreamHeaders.get("User-Agent") || "edgeone-decap-proxy");
@@ -183,7 +193,7 @@ async function handle(request, env) {
 
   const res = await fetch(upstream.toString(), init);
 
-  const resHeaders = stripHopByHopHeaders(res.headers);
+  const resHeaders = stripContentEncodingHeaders(stripHopByHopHeaders(res.headers));
   resHeaders.set("Cache-Control", "no-store");
 
   return new Response(res.body, {
