@@ -244,25 +244,48 @@ export class TableOfContents extends HTMLElement {
         const minDepth = Math.min(...headings.map(h => h.depth));
         const maxLevel = parseInt(this.dataset.depth || '3');
         let heading1Count = 1;
-        const tocHTML = headings
-            .filter(heading => heading.depth < minDepth + maxLevel)
-            .map(heading => {
-                const depthClass = heading.depth === minDepth ? '' :
-                    heading.depth === minDepth + 1 ? 'ml-4' : 'ml-8';
-                const badgeContent = heading.depth === minDepth ? (heading1Count++) :
-                    heading.depth === minDepth + 1 ? '<div class="transition w-2 h-2 rounded-[0.1875rem] bg-(--toc-badge-bg)"></div>' :
-                    '<div class="transition w-1.5 h-1.5 rounded-xs bg-black/5 dark:bg-white/10"></div>';
-                return `<a href="#${heading.slug}" class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-(--toc-btn-hover) active:bg-(--toc-btn-active) py-2">
-                    <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depthClass} ${heading.depth === minDepth ? 'bg-(--toc-badge-bg) text-(--btn-content)' : ''}">
-                        ${badgeContent}
-                    </div>
-                    <div class="transition text-sm ${heading.depth <= minDepth + 1 ? 'text-50' : 'text-30'}">${heading.text}</div>
-                </a>`;
-            }).join('');
-
         const innerContent = this.querySelector('.toc-inner-content');
         if (innerContent) {
-            innerContent.innerHTML = tocHTML + '<div class="active-indicator -z-10 absolute left-0 right-0 rounded-xl transition-all pointer-events-none bg-(--toc-btn-hover)" style="opacity: 0"></div>';
+            innerContent.textContent = '';
+            const fragment = document.createDocumentFragment();
+            const visibleHeadings = headings.filter((heading) => heading.depth < minDepth + maxLevel);
+
+            for (const heading of visibleHeadings) {
+                const depthClass = heading.depth === minDepth ? '' :
+                    heading.depth === minDepth + 1 ? 'ml-4' : 'ml-8';
+
+                const anchor = document.createElement('a');
+                anchor.href = `#${heading.slug}`;
+                anchor.className = 'px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-(--toc-btn-hover) active:bg-(--toc-btn-active) py-2';
+
+                const badge = document.createElement('div');
+                badge.className = `transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depthClass} ${heading.depth === minDepth ? 'bg-(--toc-badge-bg) text-(--btn-content)' : ''}`;
+
+                if (heading.depth === minDepth) {
+                    badge.textContent = String(heading1Count++);
+                } else {
+                    const dot = document.createElement('div');
+                    dot.className = heading.depth === minDepth + 1
+                        ? 'transition w-2 h-2 rounded-[0.1875rem] bg-(--toc-badge-bg)'
+                        : 'transition w-1.5 h-1.5 rounded-xs bg-black/5 dark:bg-white/10';
+                    badge.appendChild(dot);
+                }
+
+                const text = document.createElement('div');
+                text.className = `transition text-sm ${heading.depth <= minDepth + 1 ? 'text-50' : 'text-30'}`;
+                text.textContent = heading.text;
+
+                anchor.appendChild(badge);
+                anchor.appendChild(text);
+                fragment.appendChild(anchor);
+            }
+
+            const activeIndicator = document.createElement('div');
+            activeIndicator.className = 'active-indicator -z-10 absolute left-0 right-0 rounded-xl transition-all pointer-events-none bg-(--toc-btn-hover)';
+            activeIndicator.style.opacity = '0';
+            fragment.appendChild(activeIndicator);
+
+            innerContent.appendChild(fragment);
         }
         return true;
     }

@@ -100,11 +100,20 @@
         }
         const controls = document.createElement("div");
         controls.className = "mermaid-zoom-controls";
-        controls.innerHTML = `
-            <button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="zoom-in" title="Zoom in">+</button>
-            <button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="zoom-out" title="Zoom out">−</button>
-            <button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="reset" title="Reset">⤾</button>
-        `;
+
+        const mkBtn = (action, title, label) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-regular rounded-lg h-10 w-10 active:scale-90';
+            btn.setAttribute('data-action', action);
+            btn.title = title;
+            btn.type = 'button';
+            btn.textContent = label;
+            return btn;
+        };
+
+        controls.appendChild(mkBtn('zoom-in', 'Zoom in', '+'));
+        controls.appendChild(mkBtn('zoom-out', 'Zoom out', '−'));
+        controls.appendChild(mkBtn('reset', 'Reset', '⤾'));
 
         controls.addEventListener("click", (ev) => {
             const action =

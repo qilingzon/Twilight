@@ -282,7 +282,8 @@ const jsonLd = {
                         } else {
                             runtimeString += `${secs} ${secondKey}`;
                         }
-                        document.getElementById("modifiedtime").innerHTML = runtimeString;
+                        const el = document.getElementById("modifiedtime");
+                        if (el) el.textContent = runtimeString;
                     }
                     setInterval(runtime, 1000);
                 </script>
