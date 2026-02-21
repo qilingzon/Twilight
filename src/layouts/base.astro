@@ -127,7 +127,7 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
         <!-- Resource Preconnect -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="preconnect" href="https://code.iconify.design">
+        <!-- Security hardening: avoid preconnecting to third-party script origins -->
         <!-- Font Loader -->
         <FontLoader />
         <!-- title -->
@@ -212,6 +212,10 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
         }}></style>
         <!-- custom head -->
         <slot name="head"></slot>
+
+        <!-- Same-origin runtime bundles (generated during build) -->
+        <script src="/assets/js/iconify-icon.min.js" async referrerpolicy="no-referrer"></script>
+        <script src="/assets/js/mermaid.min.js" referrerpolicy="no-referrer"></script>
         <!-- Pio 看板娘样式 - 仅在启用时加载 -->
         {pioConfig.enable && <link rel="stylesheet" href="/pio/static/pio.css" />}
         <!-- rss feed -->

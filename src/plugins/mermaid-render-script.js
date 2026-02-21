@@ -419,40 +419,23 @@
             return Promise.resolve();
         }
 
+        // Security hardening: Mermaid should be loaded as a same-origin static script in BaseLayout.
+        // Here we only wait for it.
         return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            // Prefer same-origin bundle (generated during build) to avoid CDN slowness / tampering.
-            script.src = "/assets/js/mermaid.min.js";
-
-            script.onload = () => {
-                console.log("Mermaid library loaded successfully");
-                resolve();
-            };
-
-            script.onerror = (error) => {
-                console.error("Failed to load Mermaid library:", error);
-                // Fallback to CDN
-                const fallbackScript = document.createElement("script");
-                fallbackScript.src =
-                    "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
-
-                fallbackScript.onload = () => {
-                    console.log("Mermaid library loaded from CDN fallback");
+            const start = Date.now();
+            const maxWait = 8000;
+            const tick = () => {
+                if (typeof window.mermaid !== "undefined") {
                     resolve();
-                };
-
-                fallbackScript.onerror = () => {
-                    reject(
-                        new Error(
-                            "Failed to load Mermaid from both primary and fallback CDNs",
-                        ),
-                    );
-                };
-
-                document.head.appendChild(fallbackScript);
+                    return;
+                }
+                if (Date.now() - start > maxWait) {
+                    reject(new Error("Mermaid is not loaded (missing /assets/js/mermaid.min.js)"));
+                    return;
+                }
+                setTimeout(tick, 50);
             };
-
-            document.head.appendChild(script);
+            tick();
         });
     }
 

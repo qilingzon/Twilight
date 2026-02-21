@@ -63,7 +63,7 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
             async loadWithRetry(timeout, retryCount) {
                 for (let attempt = 1; attempt <= retryCount; attempt++) {
                     try {
-                        await this.loadScript(timeout);
+                        await this.waitForIconifyReady(timeout);
                         return;
                     } catch (error) {
                         console.warn(`Iconify load attempt ${attempt} failed:`, error);
@@ -73,69 +73,6 @@ const { preloadIcons = [], timeout = 10000, retryCount = 3 } = Astro.props;
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
-            }
-
-            loadScript(timeout) {
-                return new Promise((resolve, reject) => {
-                    // 检查是否已经存在
-                    if (this.isIconifyReady()) {
-                        resolve();
-                        return;
-                    }
-
-                    const existingScript = document.querySelector('script[src*="iconify-icon"]');
-                    if (existingScript) {
-                        this.waitForIconifyReady().then(resolve).catch(reject);
-                        return;
-                    }
-
-                    const script = document.createElement('script');
-                    // Prefer same-origin bundle (generated during build) to avoid CDN issues.
-                    script.src = '/assets/js/iconify-icon.min.js';
-                    script.async = true;
-                    script.crossOrigin = 'anonymous';
-
-                    const timeoutId = setTimeout(() => {
-                        script.remove();
-                        reject(new Error('Script load timeout'));
-                    }, timeout);
-
-                    script.onload = () => {
-                        clearTimeout(timeoutId);
-                        this.waitForIconifyReady().then(resolve).catch(reject);
-                    };
-
-                    script.onerror = () => {
-                        clearTimeout(timeoutId);
-                        script.remove();
-
-                        // Fallback to official CDN
-                        const fallback = document.createElement('script');
-                        fallback.src = 'https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js';
-                        fallback.async = true;
-                        fallback.crossOrigin = 'anonymous';
-
-                        const fbTimeoutId = setTimeout(() => {
-                            fallback.remove();
-                            reject(new Error('Fallback script load timeout'));
-                        }, timeout);
-
-                        fallback.onload = () => {
-                            clearTimeout(fbTimeoutId);
-                            this.waitForIconifyReady().then(resolve).catch(reject);
-                        };
-
-                        fallback.onerror = () => {
-                            clearTimeout(fbTimeoutId);
-                            fallback.remove();
-                            reject(new Error('Script load error'));
-                        };
-
-                        document.head.appendChild(fallback);
-                    };
-
-                    document.head.appendChild(script);
-                });
             }
 
             waitForIconifyReady(maxWait = 5000) {
