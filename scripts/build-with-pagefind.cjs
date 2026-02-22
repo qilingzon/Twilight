@@ -1,7 +1,7 @@
 /* This is a script to build the site with Pagefind */
 
 const { spawn } = require('child_process');
-const { existsSync } = require('fs');
+const { existsSync, readFileSync } = require('fs');
 const path = require('path');
 
 // Detect the platform
@@ -93,6 +93,17 @@ async function main() {
             run(nodeBin, [scriptPath('fetch-mermaid.cjs')]),
             run(nodeBin, [scriptPath('fetch-iconify-icon.cjs')]),
         ]);
+
+        // Validate Decap CMS config YAML early so a broken indent can't take down /admin in production.
+        try {
+            const yamlText = readFileSync(path.join('public', 'admin', 'config.yml'), 'utf8');
+            require('js-yaml').load(yamlText);
+            console.log('✅ Decap CMS config.yml YAML valid');
+        } catch (err) {
+            console.error('❌ Invalid public/admin/config.yml (YAML parse failed)');
+            console.error(err && err.message ? err.message : err);
+            process.exit(1);
+        }
 
         // Run Astro build
         console.log('🔨 Running Astro build...');

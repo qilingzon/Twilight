@@ -19,7 +19,7 @@
 
   async function loadCmsConfigQuick() {
     try {
-      var res = await fetch("/admin/config.yml", { cache: "no-store" });
+      var res = await fetch("/admin/config", { cache: "no-store" });
       if (!res.ok) return null;
       var text = await res.text();
 
