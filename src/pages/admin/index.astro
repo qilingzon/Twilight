@@ -1,0 +1,19 @@
+---
+// Custom Decap CMS admin route.
+// We keep this minimal and same-origin so it works well on mobile and with strict tracking prevention.
+---
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url" />
+    <title>Content Manager</title>
+  </head>
+  <body>
+    <script is:inline src="/admin/decap-cms.js"></script>
+    <script is:inline src="/admin/preview.js"></script>
+  </body>
+</html>

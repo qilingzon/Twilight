@@ -21,6 +21,56 @@ body {
   max-width: 860px;
 }
 
+.cms-preview-cover {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 0 0 16px;
+}
+
+.cms-preview-lead {
+  opacity: 0.9;
+  margin-top: 0.5em;
+}
+
+.cms-preview-metaBox {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.cms-preview-meta {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.cms-preview-meta__label {
+  min-width: 5em;
+  opacity: 0.75;
+}
+
+.cms-preview-meta__value {
+  word-break: break-word;
+}
+
+.cms-preview-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.cms-preview-gallery img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
 img {
   max-width: 100%;
   height: auto;
