@@ -14,6 +14,10 @@ backend:
 locale: zh_Hans
 
 
+# 发布工作流：草稿 / 待审核 / 已发布
+publish_mode: editorial_workflow
+
+
 # 媒体目录配置
 media_folder: "public/assets/images" # 媒体文件存储路径
 public_folder: "/assets/images" # 公共访问路径
