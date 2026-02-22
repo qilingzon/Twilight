@@ -351,7 +351,7 @@
             if (!evt || !evt.entry || typeof evt.entry.get !== "function") return;
 
             var collection = evt.entry.get("collection");
-            if (collection !== "posts") return;
+            if (collection !== "posts" && collection !== "diary" && collection !== "albums" && collection !== "projects") return;
 
             var slug = evt.entry.get("slug");
             if (!slug) {
@@ -373,19 +373,64 @@
             if (!cfg || !cfg.repo) return;
 
             var apiRoot = window.location.origin + "/github-api";
-            var allowedPrefix = "/assets/images/posts/" + slug + "/";
-
-            var cover = data.get("cover") || "";
-            var body = data.get("body") || "";
+            var allowedPrefix;
+            if (collection === "posts") allowedPrefix = "/assets/images/posts/" + slug + "/";
+            else if (collection === "diary") allowedPrefix = "/assets/images/diary/" + slug + "/";
+            else if (collection === "albums") allowedPrefix = "/assets/images/albums/" + slug + "/";
+            else if (collection === "projects") allowedPrefix = "/assets/images/projects/" + slug + "/";
+            else return;
 
             var candidateUrls = [];
-            if (typeof cover === "string" && cover.indexOf(allowedPrefix) === 0) candidateUrls.push(cover);
 
-            if (typeof body === "string" && body.indexOf(allowedPrefix) >= 0) {
-              var re = /\]\((\/assets\/images\/[^)\s]+)\)/g;
-              var m;
-              while ((m = re.exec(body))) {
-                if (m[1] && m[1].indexOf(allowedPrefix) === 0) candidateUrls.push(m[1]);
+            // posts
+            var cover = collection === "posts" ? data.get("cover") || "" : "";
+            var body = collection === "posts" ? data.get("body") || "" : "";
+
+            if (collection === "posts") {
+              if (typeof cover === "string" && cover.indexOf(allowedPrefix) === 0) candidateUrls.push(cover);
+              if (typeof body === "string" && body.indexOf(allowedPrefix) >= 0) {
+                var re = /\]\((\/assets\/images\/[^)\s]+)\)/g;
+                var m;
+                while ((m = re.exec(body))) {
+                  if (m[1] && m[1].indexOf(allowedPrefix) === 0) candidateUrls.push(m[1]);
+                }
+              }
+            }
+
+            // diary (json)
+            if (collection === "diary") {
+              var images = data.get("images");
+              if (images && typeof images.forEach === "function") {
+                images.forEach(function (it) {
+                  try {
+                    var url = "";
+                    if (typeof it === "string") url = it;
+                    else if (it && typeof it.get === "function") url = it.get("image") || it.get("src") || "";
+                    if (typeof url === "string" && url.indexOf(allowedPrefix) === 0) candidateUrls.push(url);
+                  } catch (_e) {}
+                });
+              }
+            }
+
+            // projects (json)
+            if (collection === "projects") {
+              var projImg = data.get("image") || "";
+              if (typeof projImg === "string" && projImg.indexOf(allowedPrefix) === 0) candidateUrls.push(projImg);
+            }
+
+            // albums (json)
+            if (collection === "albums") {
+              var albumCover = data.get("cover") || "";
+              if (typeof albumCover === "string" && albumCover.indexOf(allowedPrefix) === 0) candidateUrls.push(albumCover);
+              var photos = data.get("photos");
+              if (photos && typeof photos.forEach === "function") {
+                photos.forEach(function (p) {
+                  try {
+                    var url = "";
+                    if (p && typeof p.get === "function") url = p.get("src") || p.get("image") || "";
+                    if (typeof url === "string" && url.indexOf(allowedPrefix) === 0) candidateUrls.push(url);
+                  } catch (_e) {}
+                });
               }
             }
 
@@ -406,7 +451,7 @@
               var ext = fileExt(filename);
               if (!ext) continue;
 
-              var isCover = url.indexOf("/cover/") >= 0 || url === cover;
+              var isCover = url.indexOf("/cover/") >= 0 || (collection === "posts" && url === cover) || (collection === "projects") || (collection === "albums" && url === (data.get("cover") || ""));
               var prefix = isCover ? "cover" : "img";
 
               // Use timestamp + short sha to keep deterministic-ish across retries.
@@ -432,18 +477,78 @@
 
             if (!replacements.length) return;
 
-            var newCover = cover;
-            var newBody = body;
-            for (var r = 0; r < replacements.length; r++) {
-              var from = replacements[r].from;
-              var to = replacements[r].to;
-              if (typeof newCover === "string" && newCover === from) newCover = to;
-              if (typeof newBody === "string" && newBody.indexOf(from) >= 0) newBody = newBody.split(from).join(to);
+            var updated = data;
+
+            function applyReplaceInString(v) {
+              if (typeof v !== "string") return v;
+              var out = v;
+              for (var r = 0; r < replacements.length; r++) {
+                var from = replacements[r].from;
+                var to = replacements[r].to;
+                if (out.indexOf(from) >= 0) out = out.split(from).join(to);
+              }
+              return out;
             }
 
-            var updated = data;
-            if (newCover !== cover) updated = updated.set("cover", newCover);
-            if (newBody !== body) updated = updated.set("body", newBody);
+            if (collection === "posts") {
+              var newCover = applyReplaceInString(cover);
+              var newBody = applyReplaceInString(body);
+              if (newCover !== cover) updated = updated.set("cover", newCover);
+              if (newBody !== body) updated = updated.set("body", newBody);
+              return updated;
+            }
+
+            if (collection === "projects") {
+              var oldProj = data.get("image") || "";
+              var newProj = applyReplaceInString(oldProj);
+              if (newProj !== oldProj) updated = updated.set("image", newProj);
+              return updated;
+            }
+
+            if (collection === "albums") {
+              var oldAlbCover = data.get("cover") || "";
+              var newAlbCover = applyReplaceInString(oldAlbCover);
+              if (newAlbCover !== oldAlbCover) updated = updated.set("cover", newAlbCover);
+              var oldPhotos = data.get("photos");
+              if (oldPhotos && typeof oldPhotos.map === "function") {
+                var newPhotos = oldPhotos.map(function (p) {
+                  try {
+                    if (!p || typeof p.get !== "function" || typeof p.set !== "function") return p;
+                    var oldSrc = p.get("src") || "";
+                    var newSrc = applyReplaceInString(oldSrc);
+                    if (newSrc !== oldSrc) p = p.set("src", newSrc);
+                    return p;
+                  } catch (_e) {
+                    return p;
+                  }
+                });
+                if (newPhotos !== oldPhotos) updated = updated.set("photos", newPhotos);
+              }
+              return updated;
+            }
+
+            if (collection === "diary") {
+              var oldImages = data.get("images");
+              if (oldImages && typeof oldImages.map === "function") {
+                var newImages = oldImages.map(function (it) {
+                  try {
+                    if (typeof it === "string") return applyReplaceInString(it);
+                    if (it && typeof it.get === "function" && typeof it.set === "function") {
+                      var oldUrl = it.get("image") || "";
+                      var newUrl = applyReplaceInString(oldUrl);
+                      if (newUrl !== oldUrl) it = it.set("image", newUrl);
+                      return it;
+                    }
+                    return it;
+                  } catch (_e) {
+                    return it;
+                  }
+                });
+                if (newImages !== oldImages) updated = updated.set("images", newImages);
+              }
+              return updated;
+            }
+
             return updated;
           } catch (e) {
             // Never block saving.
