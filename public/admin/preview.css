@@ -1,0 +1,96 @@
+/* Decap CMS preview styles (same-origin)
+   Keep minimal and safe: approximate frontend reading experience without relying on hashed build assets.
+*/
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  line-height: 1.7;
+  font-size: 16px;
+  padding: 24px;
+  max-width: 860px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  opacity: 0.9;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.25;
+  margin: 1.2em 0 0.6em;
+}
+
+p {
+  margin: 0.8em 0;
+}
+
+blockquote {
+  margin: 1em 0;
+  padding: 0.2em 1em;
+  border-left: 4px solid rgba(127, 127, 127, 0.35);
+  opacity: 0.95;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95em;
+  padding: 0.15em 0.35em;
+  border-radius: 6px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+pre {
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+pre code {
+  padding: 0;
+  background: transparent;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+table th,
+table td {
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  padding: 8px 10px;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
+  margin: 1.4em 0;
+}
