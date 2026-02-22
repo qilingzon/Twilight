@@ -353,9 +353,3 @@ collections:
                 { label: "Site URL", name: "siteurl", widget: "string" }
             - # 标签
                 { label: "Tags", name: "tags", widget: "list", required: false, default: [] }
-
-
-# 编辑器配置
-editor:
-    # 启用预览功能
-    preview: true
