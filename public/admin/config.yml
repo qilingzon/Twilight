@@ -47,7 +47,7 @@ collections:
             # 路径配置
             path:
                 # 后台显示标签
-                label: "Path"
+                label: "路径"
                 # 记录路径的部件
                 widget: hidden # 隐藏
                 # 索引文件名称（用于嵌套集合）
